@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+*.tsbuildinfo
+android/app/src/main/assets/
+android/capacitor-cordova-android-plugins/
+*.jks
+*.keystore
+supabase/.temp/
+supabase/.branches/

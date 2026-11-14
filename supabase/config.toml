@@ -1,0 +1,6 @@
+project_id = "glowberry"
+[functions.manage-users]
+verify_jwt = false
+[auth]
+enable_signup = false
+site_url = "https://glowberry-school-admin.soaringlight2.chatgpt.site"

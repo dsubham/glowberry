@@ -32,7 +32,9 @@ Choose **Explore Admin demo** to review without a configured backend. Demo chang
 
 ## Activate Supabase
 
-1. Open the SQL Editor for project `ukcozqyszfektythecgg`. Run `supabase/migrations/202611150001_school.sql` **once** on a project without the app tables. Review/resolve conflicts if you already have tables with these names. The migration creates roles, profiles, content, media, public school settings, private storage, RLS and realtime publication entries.
+The configured Glowberry project is `ukcozqyszfektythecgg`. Its schema, private storage, account function and school-issued-only sign-in have been deployed. Initial Admin credentials are provided separately and are never committed. These instructions also document a fresh installation.
+
+1. Open the SQL Editor for project `ukcozqyszfektythecgg`. Run all SQL files in `supabase/migrations/` **once, in filename order**, on a project without the app tables (or use the CLI command below). Review/resolve conflicts if you already have tables with these names. The migration creates roles, profiles, content, media, public school settings, private storage, RLS and realtime publication entries.
 2. In Authentication settings, disable **Allow new users to sign up**. The school issues accounts; the Admin Edge Function uses the server-side Admin API. Supabase email/password auth must be enabled. Auth usernames are represented by internal email aliases, e.g. `admin@accounts.glowberryutopia.in`; parents enter just `parent.ananya` in the app. These aliases are not inboxes. Password resets are handled by school Admin rather than email recovery.
 3. Bootstrap the first Admin: in Authentication → Users, add a confirmed email user with alias `admin@accounts.glowberryutopia.in` and a strong password you choose. Then use SQL Editor to create its profile (replace the UUID):
 
@@ -45,14 +47,16 @@ values ('REPLACE_WITH_AUTH_USER_UUID', 'admin', 'School Administrator', 'admin')
 
 ```sh
 npx supabase login
-npx supabase link --project-ref ukcozqyszfektythecgg
-npx supabase functions deploy manage-users --project-ref ukcozqyszfektythecgg
+npx supabase db push --remote=ukcozqyszfektythecgg --yes
+npx supabase functions deploy manage-users --remote=ukcozqyszfektythecgg --use-api --yes
+npx supabase config diff --remote=ukcozqyszfektythecgg
+npx supabase config push --remote=ukcozqyszfektythecgg --yes
 ```
 
 `supabase/config.toml` disables the legacy gateway JWT check for this function because publishable keys are supported. The function independently validates the caller's JWT using `auth.getUser` and reads their Admin role from the database on every request. It never trusts client-supplied roles for authorisation. The platform supplies `SUPABASE_SERVICE_ROLE_KEY` to the function; never copy it into the frontend. If using another alias domain, set the same `AUTH_DOMAIN` Edge Function secret and `VITE_AUTH_DOMAIN` client setting.
 
 5. Sign in as `admin`. Create parent/teacher accounts in **School accounts**, and share credentials privately. Supabase Auth stores password hashes; this app never writes passwords into school tables.
-6. Before real school use, verify in the deployed project: unauthenticated access cannot read posts/files/profiles, parents cannot read drafts/staff posts, teachers cannot write content, and users cannot change roles. This release's local tests do not execute remote RLS policies.
+6. Before real school use, verify in the deployed project: unauthenticated access cannot read posts/files/profiles, parents cannot read drafts/staff posts, teachers cannot write content, and users cannot change roles. Run `npx supabase db query --remote=ukcozqyszfektythecgg --file tests/rls.sql --yes` for transaction-based role and file access tests. All test records roll back.
 
 ## Web deployment
 
@@ -75,7 +79,7 @@ npm run android:open
 
 The native project is already generated. Install Android Studio, its SDK, and a compatible JDK (Capacitor 7 uses JDK 21). Sync Gradle, test on a device, then create a signed Android App Bundle in Android Studio for Play Console. The application ID is `in.glowberryutopia.school`; confirm it before the first store upload. Use your own release signing key and keep it outside the repository. Build output, keystores and machine-specific SDK paths must not be committed.
 
-The web build and Capacitor sync can be checked without an Android SDK; compiling/signing an APK or AAB requires the Android toolchain. No store release is included in this scaffold.
+The web build and Capacitor sync can be checked without an Android SDK; compiling/signing an APK or AAB requires the Android toolchain. The generated launcher/splash assets must also be replaced with final approved school artwork before release. No store release is included in this scaffold.
 
 For iPhone later: install `@capacitor/ios` matching Capacitor's major version, run `npx cap add ios`, and complete Xcode signing/testing on macOS. Reuse the same app and Supabase backend.
 
@@ -86,7 +90,13 @@ npm test
 npm run build
 ```
 
-Tests cover username alias validation, file type/size boundaries and attachment count. Validate real auth, storage, Edge Functions, RLS and native behavior against a configured Supabase project and Android device before release.
+Unit tests cover username alias validation, file type/size boundaries and attachment count. `tests/rls.sql` tests real database policies for all four roles and private file access, then rolls back. `scripts/bootstrap-admin.mjs` creates the first Admin (only if absent), saves a generated password to an owner-readable file outside the repository, and smoke-tests sign-in, account creation/reset and authorisation; it removes its temporary test account. Run it locally with an authenticated Supabase CLI:
+
+```sh
+node scripts/bootstrap-admin.mjs ukcozqyszfektythecgg /private/tmp/glowberry-admin-credentials.txt
+```
+
+The server key is obtained through the local CLI and stays in process memory. Validate native device behavior before release.
 
 ## Suggested next phases
 
