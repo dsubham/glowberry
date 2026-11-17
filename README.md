@@ -107,3 +107,11 @@ The server key is obtained through the local CLI and stays in process memory. Va
 5. Photo consent controls, audit history, account suspension and forced initial password changes.
 
 File uploads support JPG/PNG/WebP/PDF, 10 MB per file and 8 per post. Files can be added while editing; individual file removal/replacement is a future improvement. Deleting a post removes its stored files first. Upload errors preserve the saved post; reopen it to retry missing files. Uploaded files stay private; signed URLs can remain valid for up to one hour after issue. This single-school foundation does not implement multi-school tenancy or offline pupil-data caching.
+
+## Students and attendance (1.1.0)
+
+The Admin **Students** screen adds and edits student name, private photo, parent/guardian name and phone, grade, admission number, date of birth, admission date and notes. Students can be archived without losing attendance history. Parent names are contact details; parent login accounts are not yet linked to students.
+
+Attendance is saved per student and school date (Asia/Kolkata) as Present, Absent, Late or Excused. Unmarked is separate from Absent. Admins can correct earlier dates and view each student's last 90 recorded days. Future dates and days before admission are rejected. The page offers grade, record-status and search filters. School holidays and bulk marking are future work.
+
+`supabase/migrations/202611170001_students.sql` creates Admin-only tables and a private student-photo bucket. Photos accept JPG, PNG or WebP up to 5 MB. Run `npm test` and `npx supabase db query --remote=ukcozqyszfektythecgg --file tests/students-rls.sql --yes` to check validation, attendance correction and role access. Demo student data stays in the local browser.
