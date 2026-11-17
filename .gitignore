@@ -14,3 +14,5 @@ android/capacitor-cordova-android-plugins/
 *.keystore
 supabase/.temp/
 supabase/.branches/
+
+.DS_Store
