@@ -100,18 +100,35 @@ The server key is obtained through the local CLI and stays in process memory. Va
 
 ## Suggested next phases
 
-1. Parent home with child/class assignments and a class-scoped feed (including stricter database policies).
-2. Teacher activity authoring with Admin approval.
-3. Guest school information and admission enquiry.
-4. Attendance, push notifications and school calendar events.
-5. Photo consent controls, audit history, account suspension and forced initial password changes.
+1. Class-scoped parent feed and teacher activity authoring with Admin approval.
+2. Guest school information and admission enquiry.
+3. Push notifications and school calendar events.
+4. Photo consent controls, audit history, account suspension and forced initial password changes.
 
 File uploads support JPG/PNG/WebP/PDF, 10 MB per file and 8 per post. Files can be added while editing; individual file removal/replacement is a future improvement. Deleting a post removes its stored files first. Upload errors preserve the saved post; reopen it to retry missing files. Uploaded files stay private; signed URLs can remain valid for up to one hour after issue. This single-school foundation does not implement multi-school tenancy or offline pupil-data caching.
 
 ## Students and attendance (1.1.0)
 
-The Admin **Students** screen adds and edits student name, private photo, parent/guardian name and phone, grade, admission number, date of birth, admission date and notes. Students can be archived without losing attendance history. Parent names are contact details; parent login accounts are not yet linked to students.
+The Admin **Students** screen adds and edits student name, private photo, parent/guardian name and phone, grade, admission number, date of birth, admission date and notes. Students can be archived without losing attendance history. Parent names are contact details; parent login accounts must be linked separately in the student's **Access** tab.
 
 Attendance is saved per student and school date (Asia/Kolkata) as Present, Absent, Late or Excused. Unmarked is separate from Absent. Admins can correct earlier dates and view each student's last 90 recorded days. Future dates and days before admission are rejected. The page offers grade, record-status and search filters. School holidays and bulk marking are future work.
 
 `supabase/migrations/202611170001_students.sql` creates Admin-only tables and a private student-photo bucket. Photos accept JPG, PNG or WebP up to 5 MB. Run `npm test` and `npx supabase db query --remote=ukcozqyszfektythecgg --file tests/students-rls.sql --yes` to check validation, attendance correction and role access. Demo student data stays in the local browser.
+
+## Fees, daily notes and reports (1.2.0)
+
+Open **Students → Fees, notes & reports** for a child. The **Fees** tab records only the monthly paid date; a blank paid date means unpaid or not yet recorded. There is no amount, invoice or online payment processing. The **Daily notes** tab lets staff write one note per student, date and author. The Students page also has a daily completion view and a filter for children missing a note. Notes are staff-only.
+
+The **Reports** tab creates daily or weekly reports with Overview, Learning and activities, Wellbeing, Looking ahead, and up to six JPG/PNG activity photos (5 MB each). Each photo may have a caption. Draft reports stay with assigned staff; publishing makes a report visible to linked parents. Staff and parents can download a generated A4 PDF. On Android, the native share sheet offers the PDF to other apps. The PDF is assembled from live report data and private photos when requested; it is not stored as a public file. The bundled Noto Sans font and its OFL notice are in `public/brand`.
+
+Admins use **Access** in each student's journal to assign teacher and parent accounts created in **School accounts**. A teacher sees only assigned students and can record their fees, notes and reports. A parent sees only linked children, monthly fee status and published reports. The full student table and internal notes remain unavailable to parents. This is a limited teacher/parent portal for these student-level features; their broader home screens and feeds are future phases.
+
+`supabase/migrations/202611170002_student_care.sql` and `202611170003_student_link_role_fix.sql` add the role links, monthly fees, daily notes, reports, private report photos and row-level access rules. Run `npm test`, `npm run build`, and `npx supabase db query --remote=ukcozqyszfektythecgg --file tests/student-care-rls.sql --yes`. The SQL test creates synthetic records inside a transaction and rolls them back. Admin demo data remains in the browser and does not create school records.
+
+## School workflows (1.3.0)
+
+**Staff attendance** lets an administrator mark each teacher or administrator Present, Absent or Leave for a selected school date. Staff can see their own database record; parents cannot see staff attendance.
+
+**School documents** creates an editable Academic Calendar (dated events), Time Table (class, day, time and activity), printable Admission Form (school instructions and blank fields), and student Marksheet (term, Admin-entered subjects, A-F or 1-100 grades, and remarks). The school controls each document's Draft or Published status. PDFs are generated from current data on demand; the Android share sheet and web download/share action can send them to families. Published general documents are available in teacher and parent portals. A published marksheet is visible only to accounts linked to that student. Admin chooses the grading scale for each marksheet and enters every subject and grade.
+
+Daily notes now have a **Delete note** action for their author or an administrator, with a confirmation prompt. Deletion is permanent. `supabase/migrations/202611180001_school_workflows.sql` adds staff attendance and school document tables with row-level access rules. Verify with `npm test` and `npx supabase db query --remote=ukcozqyszfektythecgg --file tests/workflows-rls.sql --yes`.
