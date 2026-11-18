@@ -13,15 +13,17 @@ export async function buildReportPdf(student:CareStudent,report:StudentReport):P
  const pdf=await PDFDocument.create();pdf.registerFontkit(fontkit);
  const fontResponse=await fetch('/brand/NotoSans-Regular.ttf');if(!fontResponse.ok)throw new Error('Unable to load the report font.');
  const font=await pdf.embedFont(await fontResponse.arrayBuffer(),{subset:true});
- let page=pdf.addPage([paper.width,paper.height]),y=paper.height-50,pageNumber=1;
- function header(){page.drawText('GLOWBERRY UTOPIA',{x:44,y:paper.height-42,size:10,font,color:berry});page.drawText('Nurturing curious minds',{x:paper.width-185,y:paper.height-42,size:8,font,color:muted});page.drawLine({start:{x:44,y:paper.height-52},end:{x:paper.width-44,y:paper.height-52},thickness:1,color:leaf});}
+ const logoResponse=await fetch('/brand/glowberry-logo.jpg');if(!logoResponse.ok)throw new Error('Unable to load the Glowberry logo.');
+ const logo=await pdf.embedJpg(await logoResponse.arrayBuffer());
+ let page=pdf.addPage([paper.width,paper.height]),y=paper.height-112,pageNumber=1;
+ function header(){page.drawImage(logo,{x:44,y:paper.height-91,width:58,height:58});page.drawText('GLOWBERRY UTOPIA',{x:113,y:paper.height-52,size:11,font,color:berry});page.drawText('Nurturing curious minds',{x:113,y:paper.height-68,size:8,font,color:muted});page.drawLine({start:{x:44,y:paper.height-100},end:{x:paper.width-44,y:paper.height-100},thickness:1,color:leaf});}
  function footer(){page.drawLine({start:{x:44,y:44},end:{x:paper.width-44,y:44},thickness:.6,color:leaf});page.drawText('A little care. A lot of possibility.',{x:44,y:29,size:8,font,color:muted});page.drawText(String(pageNumber),{x:paper.width-52,y:29,size:8,font,color:muted});}
- function nextPage(){footer();page=pdf.addPage([paper.width,paper.height]);pageNumber++;header();y=paper.height-75;}
+ function nextPage(){footer();page=pdf.addPage([paper.width,paper.height]);pageNumber++;header();y=paper.height-120;}
  function room(height:number){if(y-height<63)nextPage();}
  function lines(text:string,size:number,maxWidth:number){const result:string[]=[];for(const paragraph of text.split(/\n/)){if(!paragraph.trim()){result.push('');continue;}let line='';for(const word of paragraph.trim().split(/\s+/)){const trial=line?`${line} ${word}`:word;if(font.widthOfTextAtSize(trial,size)>maxWidth&&line){result.push(line);line=word;}else line=trial;}result.push(line);}return result;}
  function paragraph(text:string,size=10,color=ink){for(const line of lines(text,size,paper.width-88)){room(size+6);if(line)page.drawText(line,{x:44,y,size,font,color});y-=size+6;}}
  function section(title:string,body:string){if(!body.trim())return;room(52);y-=10;page.drawText(title.toUpperCase(),{x:44,y,size:9,font,color:berry});y-=20;paragraph(body.trim());}
- header();y-=30;
+ header();y-=16;
  paragraph(report.title,20,berry);y-=5;
  paragraph(`${student.name}  |  ${student.grade}`,11,ink);
  paragraph(report.cadence==='daily'?`Daily report  |  ${niceDate(report.period_start)}`:`Weekly report  |  ${niceDate(report.period_start)} - ${niceDate(report.period_end)}`,9,muted);

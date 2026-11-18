@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import {readFile} from 'node:fs/promises';
-import {PDFDocument} from 'pdf-lib';
+import {PDFDict,PDFDocument,PDFName} from 'pdf-lib';
 import {addDays,monthStart,validateFeeMonth,validateReport,validateReportImages,weekStart,type CareStudent,type StudentReport} from '../src/care-data';
 import {buildReportPdf} from '../src/report-pdf';
 
@@ -15,6 +15,6 @@ describe('student care',()=>{
   const font=await readFile(new URL('../public/brand/NotoSans-Regular.ttf',import.meta.url));
   const photo=await readFile(new URL('../public/brand/glowberry-logo.jpg',import.meta.url));
   vi.stubGlobal('fetch',async(url:string)=>new Response(url.includes('NotoSans')?font:photo,{status:200}));
-  try{const blob=await buildReportPdf(student,{...report,images:[{id:'image',report_id:'report',path:'',caption:'Building and learning',mime:'image/jpeg',url:'/photo.jpg'}]});const bytes=await blob.arrayBuffer();const document=await PDFDocument.load(bytes);expect(document.getPageCount()).toBeGreaterThanOrEqual(1);expect(bytes.byteLength).toBeGreaterThan(2000);}finally{vi.unstubAllGlobals();}
+  try{const blob=await buildReportPdf(student,{...report,images:[{id:'image',report_id:'report',path:'',caption:'Building and learning',mime:'image/jpeg',url:'/photo.jpg'}]});const bytes=await blob.arrayBuffer();const document=await PDFDocument.load(bytes);expect(document.getPageCount()).toBeGreaterThanOrEqual(1);const xObjects=document.getPage(0).node.Resources()?.lookup(PDFName.of('XObject'),PDFDict);expect(xObjects?.keys().length).toBeGreaterThan(0);expect(bytes.byteLength).toBeGreaterThan(2000);}finally{vi.unstubAllGlobals();}
  });
 });
